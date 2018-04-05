@@ -1,0 +1,59 @@
+name: media-goggler
+version: 0.0.1
+synopsis: A media server written in Haskell
+description: See README at <https://github.com/jvanbruegge/media-goggler#readme>
+maintainer: Jan van Brügge <supermanitu@gmail.com>
+license: Apache-2.0
+github: jvanbruegge/media-goggler
+category: Web
+
+ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+
+dependencies:
+  - base
+  - protolude
+
+executable:
+  main: Main.hs
+  source-dirs: src
+
+default-extensions:
+    - AutoDeriveTypeable
+    - BangPatterns
+    - BinaryLiterals
+    - ConstraintKinds
+    - DataKinds
+    - DefaultSignatures
+    - DeriveDataTypeable
+    - DeriveFoldable
+    - DeriveFunctor
+    - DeriveGeneric
+    - DeriveTraversable
+    - DoAndIfThenElse
+    - EmptyDataDecls
+    - ExistentialQuantification
+    - ExplicitForAll
+    - FlexibleContexts
+    - FlexibleInstances
+    - FunctionalDependencies
+    - GADTs
+    - GeneralizedNewtypeDeriving
+    - InstanceSigs
+    - KindSignatures
+    - LambdaCase
+    - MultiParamTypeClasses
+    - MultiWayIf
+    - NoImplicitPrelude
+    - OverloadedStrings
+    - PartialTypeSignatures
+    - PatternGuards
+    - PolyKinds
+    - RankNTypes
+    - RecordWildCards
+    - ScopedTypeVariables
+    - TupleSections
+    - TypeFamilies
+    - TypeSynonymInstances
+    - ViewPatterns
+
+
