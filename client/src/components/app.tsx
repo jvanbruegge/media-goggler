@@ -15,15 +15,18 @@ export interface Sinks extends BaseSinks {
 }
 
 // State
-export interface State {
-}
+export interface State {}
 export const defaultState: State = {};
 export type Reducer = (prev?: State) => State | undefined;
 
 export function App(sources: Sources): Sinks {
     const initReducer$ = xs.of<Reducer>(() => ({}));
 
-    const vdom$ = xs.of(<div><h1>Media Goggler</h1></div>);
+    const vdom$ = xs.of(
+        <div>
+            <h1>Media Goggler</h1>
+        </div>
+    );
 
     return {
         DOM: vdom$

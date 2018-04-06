@@ -32,8 +32,5 @@ export const driverNames = driverThunks
     .concat(['onion', 'router']);
 
 export function wrapMain(main: Component): Component {
-    return routerify(
-        onionify(main as any),
-        switchPath
-    ) as any;
+    return routerify(onionify(main as any), switchPath) as any;
 }

@@ -31,7 +31,7 @@
   "scripts": {
     "postinstall": "cd ../.git/hooks && sed -i -e 's/media-goggler/client/g' *",
     "precommit": "lint-staged",
-    "format": "prettier --write './**/*.{js,jsx,ts,tsx}'",
+    "format": "prettier --write '{src,test}/**/*.{js,jsx,ts,tsx}'",
     "start": "cycle-scripts start",
     "test": "cycle-scripts test",
     "build": "cycle-scripts build",
