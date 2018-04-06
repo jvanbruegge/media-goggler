@@ -5,8 +5,14 @@ import Data.Aeson (ToJSON)
 import GHC.Generics (Generic)
 import Path (Path, Rel, File)
 
+data LibraryType = MovieType deriving Generic
+
+instance ToJSON LibraryType
+
 data Library = Library
-    { movies :: [Movie]
+    { name :: Text,
+      libraryType :: LibraryType,
+      movies :: [Movie]
     } deriving Generic
 
 instance ToJSON Library

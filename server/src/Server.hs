@@ -1,16 +1,26 @@
 module Server where
 
 import Protolude
-import Servant
+import Servant hiding (Server)
 
 import API
 import Datatypes
 
+data ServerState = ServerState
+    { boltPort :: Int,
+      dbUser :: Text,
+      dbPassword :: Text
+    } deriving Generic
+
+type Server api = ServerT api (ReaderT ServerState Handler)
+
 server :: Server MediaGogglerAPI
-server = getLibraries :<|> getLibrary
+server = (getLibraries :<|> getLibrary) :<|> (getPersons :<|> getPerson)
     where
-        getLibrary :: Server LibraryAPI
         getLibrary = undefined
+        getPerson = undefined
+        getPersons = undefined
+
 
 getLibraries :: Server LibrariesAPI
-getLibraries _ = return [Library { movies = [] }]
+getLibraries _ = return [Library { movies = [], name = "Filme", libraryType = MovieType }]

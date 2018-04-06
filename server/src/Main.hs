@@ -1,24 +1,22 @@
 module Main where
 
 import Protolude
-import Servant
-import Network.Wai (Application)
+import Servant hiding (Server)
 import Network.Wai.Handler.Warp (run)
 
 import API (MediaGogglerAPI)
-import Server (server)
+import Server (ServerState(..), server)
 
-data ServerState = ServerState
-    { boltPort :: Int,
-      dbUser :: Text,
-      dbPassword :: Text
-    } deriving Generic
+readerToHandler :: forall a. ServerState -> ReaderT ServerState Handler a -> Handler a
+readerToHandler = flip runReaderT
 
 mediaGogglerAPI :: Proxy MediaGogglerAPI
 mediaGogglerAPI = Proxy
 
-app :: Application
-app = serve mediaGogglerAPI server
-
 main :: IO ()
-main = run 3000 app
+main = do
+    let serverState = ServerState { boltPort = 3333, dbUser = "neo4j", dbPassword = "neo4j"
+        }
+    let hoisted = hoistServer mediaGogglerAPI (readerToHandler serverState) server
+    let app = serve mediaGogglerAPI hoisted
+    run 3000 app
