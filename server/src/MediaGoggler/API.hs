@@ -1,10 +1,10 @@
-module API where
+module MediaGoggler.API where
 
 import Protolude
 import Servant
 import GHC.Generics (Generic)
 
-import Datatypes (Library, Movie, Person)
+import MediaGoggler.Datatypes (Library, Movie, Person)
 
 newtype Id = Id Int deriving (Generic, FromHttpApiData)
 

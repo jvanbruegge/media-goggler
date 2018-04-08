@@ -1,4 +1,4 @@
-module Datatypes where
+module MediaGoggler.Datatypes where
 
 import Protolude
 import Data.Aeson (ToJSON)
@@ -6,8 +6,10 @@ import GHC.Generics (Generic)
 import Path (Path, Rel, File)
 
 data LibraryType = MovieType deriving Generic
+data FileType = Video deriving Generic
 
 instance ToJSON LibraryType
+instance ToJSON FileType
 
 data Library = Library
     { name :: Text,

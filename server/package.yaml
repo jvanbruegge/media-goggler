@@ -11,6 +11,8 @@ ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-pattern
 
 dependencies:
   - base
+  - containers
+  - data-default
   - protolude
   - servant-server
   - hasbolt
@@ -54,6 +56,7 @@ default-extensions:
     - LambdaCase
     - MultiParamTypeClasses
     - MultiWayIf
+    - NamedFieldPuns
     - NoImplicitPrelude
     - OverloadedStrings
     - PartialTypeSignatures

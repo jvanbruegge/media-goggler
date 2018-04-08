@@ -1,15 +1,15 @@
-module Server where
+module MediaGoggler.Server where
 
 import Protolude
 import Servant hiding (Server)
+import Data.Pool (Pool)
+import Database.Bolt (Pipe)
 
-import API
-import Datatypes
+import MediaGoggler.API
+import MediaGoggler.Datatypes
 
 data ServerState = ServerState
-    { boltPort :: Int,
-      dbUser :: Text,
-      dbPassword :: Text
+    { pool :: Pool Pipe
     } deriving Generic
 
 type Server api = ServerT api (ReaderT ServerState Handler)
