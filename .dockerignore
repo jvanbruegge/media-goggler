@@ -1,0 +1,5 @@
+.git
+server/.stack-work
+client/node_modules
+client/build
+client/coverage
