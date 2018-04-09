@@ -7,20 +7,23 @@ import Database.Bolt (Pipe)
 
 import MediaGoggler.API
 import MediaGoggler.Datatypes
-
-data ServerState = ServerState
-    { pool :: Pool Pipe
-    } deriving Generic
+import MediaGoggler.Database (saveLibrary)
+import MediaGoggler.Config (ServerState)
 
 type Server api = ServerT api (ReaderT ServerState Handler)
 
 server :: Server MediaGogglerAPI
-server = (getLibraries :<|> getLibrary) :<|> (getPersons :<|> getPerson)
+server = (getLibrary :<|> getLibraries :<|> postLibrary)
+    :<|> (getPerson :<|> getPersons :<|> postPerson)
     where
         getLibrary = undefined
         getPerson = undefined
         getPersons = undefined
+        postPerson = undefined
 
 
-getLibraries :: Server LibrariesAPI
-getLibraries _ = return [Library { movies = [], name = "Filme", libraryType = MovieType }]
+getLibraries :: Server (GetAll Library)
+getLibraries _ = return [MovieLibrary { movies = [], name = "Filme" }]
+
+postLibrary :: Server (PostSingle Library)
+postLibrary = saveLibrary

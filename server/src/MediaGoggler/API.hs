@@ -8,16 +8,17 @@ import MediaGoggler.Datatypes (Library, Movie, Person)
 
 newtype Id = Id Int deriving (Generic, FromHttpApiData)
 
-type MediaGogglerAPI = "libraries" :> (LibrariesAPI :<|> LibraryAPI)
-    :<|> "persons" :> (PersonsAPI :<|> PersonAPI)
+type GetAll res = QueryParam "count" Int :> Get '[JSON] [res]
+type PostSingle res = ReqBody '[JSON] res :> Post '[JSON] ()
+type GetSingle res = Capture "id" Id :> Get '[JSON] res
 
-type PersonsAPI = QueryParam "count" Int :> Get '[JSON] [Person]
-type PersonAPI = Capture "id" Id :> Get '[JSON] Person
+type Endpoint res = GetAll res :<|> PostSingle res
+type SimpleEndpoint res = GetSingle res :<|> Endpoint res
 
-type LibrariesAPI = QueryParam "count" Int :> Get '[JSON] [Library]
+type MediaGogglerAPI = "libraries" :> (LibraryAPI :<|> Endpoint Library)
+    :<|> "persons" :> SimpleEndpoint Person
+
 type LibraryAPI = Capture "id" Id :> (
-        "movies" :> (MoviesAPI :<|> MovieAPI)
+        Get '[JSON] Library
+        :<|> "movies" :> SimpleEndpoint Movie
     )
-
-type MoviesAPI = QueryParam "count" Int :> Get '[JSON] [Movie]
-type MovieAPI = Capture "id" Id :> Get '[JSON] Movie
