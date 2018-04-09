@@ -3,31 +3,37 @@ module MediaGoggler.Database (
     fileExistsInDb,
     addFileToDb,
     constructState,
-    saveLibrary
+    saveLibrary,
+    getLibraries
     ) where
 
-import Protolude hiding (intercalate)
+import Protolude hiding (intercalate, empty)
+import Prelude (error)
 
-import Data.Text (pack, intercalate)
-import Data.Map (Map, fromList, keys)
+import Data.Text (pack, unpack, intercalate)
+import Data.Map (Map, fromList, keys, empty, (!), insert)
 import Data.Pool (createPool, withResource)
-import Database.Bolt (BoltActionT, Value(T), BoltCfg, Record, queryP, run, connect, close)
+import Database.Bolt (BoltActionT, Value(..), Structure(..), BoltCfg, Record, queryP, run, connect, close)
 import Path (Path, Abs, File, toFilePath)
 
 import MediaGoggler.Config (ServerState(..))
 import MediaGoggler.Datatypes
+import MediaGoggler.Generics (fromRecord, serialize)
 
 type MonadDB a = forall m . MonadIO m => ReaderT ServerState m a
 
-class DatabaseParams a where
-    databaseParams :: a -> Map Text Value
+cleanRecord :: Text -> Record -> Map Text Value
+cleanRecord k rec = insert "id" (getId _fields) (getProps _fields)
+    where _fields = getFields (rec ! k)
+          getFields (S Structure{ fields }) = fields
+          getFields _ = error "Fuck off"
+          getId (id:_) = id
+          getId _ = error "FFS"
+          getProps (_:_:(M m):_) = m
+          getProps _ = error "still shitty code"
 
-instance DatabaseParams Library where
-    databaseParams MovieLibrary{..} = fromList [("name", T name)]
-    databaseParams SeriesLibrary{..} = fromList [("name", T name)]
-
-paramsToCypher :: DatabaseParams a => a -> Text
-paramsToCypher params = intercalate " " $ process <$> keys (databaseParams params)
+paramsToCypher :: Record -> Text
+paramsToCypher params = intercalate " " $ process <$> keys params
     where process key = "SET l." <> key <> " = {" <> key <> "}"
 
 queryDB :: Text -> Map Text Value -> MonadDB [Record]
@@ -52,9 +58,21 @@ addFileToDb file path = queryDB cypher (paramsFromPath path) *> pure ()
               Video -> "Video"
 
 saveLibrary :: Library -> MonadDB ()
-saveLibrary lib = queryDB cypher (databaseParams lib) *> pure ()
-    where cypher = "CREATE (l:Library:" <> (libraryType lib)
-                <> ") Set l.name = {name} " <> (paramsToCypher lib)
+saveLibrary Library{ libraryType, name } = queryDB cypher params *> pure ()
+    where cypher = "CREATE (l:Library:" <> (getLibraryType $ serialize libraryType)
+                <> ") Set l.name = {name} " <> (paramsToCypher params)
+          params = fromList [("name", T name), ("libraryType", serialize libraryType)]
+          getLibraryType (T lib) = lib
+          getLibraryType _ = error "shouldnt happen"
+
+getLibraries :: Int -> MonadDB [Library]
+getLibraries limit = do
+    records <- fmap (cleanRecord "l") <$> queryDB cypher empty
+    pure $ fromRecordPure <$> records
+    where cypher = "MATCH (l:Library) RETURN l LIMIT " <> (pack $ show limit)
+          fromRecordPure rec = case (fromRecord rec) of
+              Left e -> error (unpack e)
+              Right a -> a
 
 constructState :: BoltCfg -> IO ServerState
 constructState cfg = ServerState <$> createPool (connect cfg) close 4 500 1

@@ -2,11 +2,8 @@ module MediaGoggler.API where
 
 import Protolude
 import Servant
-import GHC.Generics (Generic)
 
-import MediaGoggler.Datatypes (Library, Movie, Person)
-
-newtype Id = Id Int deriving (Generic, FromHttpApiData)
+import MediaGoggler.Datatypes (Library, Person, Id)
 
 type GetAll res = QueryParam "count" Int :> Get '[JSON] [res]
 type PostSingle res = ReqBody '[JSON] res :> Post '[JSON] ()
@@ -20,5 +17,5 @@ type MediaGogglerAPI = "libraries" :> (LibraryAPI :<|> Endpoint Library)
 
 type LibraryAPI = Capture "id" Id :> (
         Get '[JSON] Library
-        :<|> "movies" :> SimpleEndpoint Movie
+        -- :<|> "movies" :> SimpleEndpoint Movie
     )

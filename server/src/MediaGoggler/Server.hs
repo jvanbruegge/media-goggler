@@ -2,12 +2,10 @@ module MediaGoggler.Server where
 
 import Protolude
 import Servant hiding (Server)
-import Data.Pool (Pool)
-import Database.Bolt (Pipe)
 
 import MediaGoggler.API
 import MediaGoggler.Datatypes
-import MediaGoggler.Database (saveLibrary)
+import qualified MediaGoggler.Database as DB
 import MediaGoggler.Config (ServerState)
 
 type Server api = ServerT api (ReaderT ServerState Handler)
@@ -23,7 +21,7 @@ server = (getLibrary :<|> getLibraries :<|> postLibrary)
 
 
 getLibraries :: Server (GetAll Library)
-getLibraries _ = return [MovieLibrary { movies = [], name = "Filme" }]
+getLibraries limit = DB.getLibraries $ fromMaybe 100 limit
 
 postLibrary :: Server (PostSingle Library)
-postLibrary = saveLibrary
+postLibrary = DB.saveLibrary

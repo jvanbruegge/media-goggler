@@ -1,40 +1,37 @@
 module MediaGoggler.Datatypes where
 
 import Protolude
+import Servant (FromHttpApiData)
 import Data.Aeson (ToJSON, FromJSON)
 import GHC.Generics (Generic)
 import Path (Path, Rel, File)
+import Database.Bolt (Value(..))
+
+import MediaGoggler.Generics (Serializable(..), RecordSerializable)
+
+newtype Id = Id Int
+    deriving stock (Generic)
+    deriving anyclass (FromJSON, ToJSON)
+    deriving newtype(FromHttpApiData, Serializable)
 
 data FileType = Video deriving (Generic, FromJSON, ToJSON)
+data LibraryType = MovieType | SeriesType deriving (Generic, FromJSON, ToJSON)
 
-class LibraryType a where
-    libraryType :: a -> Text
+instance Serializable LibraryType where
+    serialize MovieType = T "MovieType"
+    serialize SeriesType = T "SeriesType"
+    deserialize (T "MovieType") = Right MovieType
+    deserialize (T "SeriesType") = Right SeriesType
+    deserialize _ = Left "Not a LibraryType value"
 
-instance LibraryType Library where
-    libraryType MovieLibrary{} = "MovieLibrary"
-    libraryType SeriesLibrary{} = "SeriesLibrary"
+data Library = Library
+    { id :: Id
+    , name :: Text
+    , libraryType :: LibraryType
+    } deriving (Generic, FromJSON, ToJSON, RecordSerializable)
 
-data Library = MovieLibrary
-    { name :: Text,
-      movies :: [Movie]
-    } | SeriesLibrary
-    { name :: Text,
-      specials :: Season,
-      seasons :: [Season]
-    } deriving (Generic, FromJSON, ToJSON)
-
-data Movie = Movie
-    { actors :: [Person],
-      directors :: [Person],
-      file :: VideoFile
-    } deriving (Generic, FromJSON, ToJSON)
-
-data Season = Season
-    { episodes :: [Episode]
-    } deriving (Generic, FromJSON, ToJSON)
-
-data Episode = Episode
-    { file :: VideoFile
+data Metadata = Metadata
+    { summary :: Text
     } deriving (Generic, FromJSON, ToJSON)
 
 data Person = Person
