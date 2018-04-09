@@ -15,7 +15,7 @@ newtype Id = Id Int
     deriving newtype(FromHttpApiData, Serializable)
 
 data FileType = Video deriving (Generic, FromJSON, ToJSON)
-data LibraryType = MovieType | SeriesType deriving (Generic, FromJSON, ToJSON)
+data LibraryType = MovieType | SeriesType deriving (Generic, Show, FromJSON, ToJSON)
 
 instance Serializable LibraryType where
     serialize MovieType = T "MovieType"

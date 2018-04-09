@@ -8,29 +8,24 @@ module MediaGoggler.Database (
     ) where
 
 import Protolude hiding (intercalate, empty)
-import Prelude (error)
 
-import Data.Text (pack, unpack, intercalate)
-import Data.Map (Map, fromList, keys, empty, (!), insert)
+import Database.Bolt hiding (Path, pack, unpack)
+import Data.Either (rights)
+import Data.Text (pack, intercalate)
+import Data.Map (Map, fromList, keys, empty, insert)
 import Data.Pool (createPool, withResource)
-import Database.Bolt (BoltActionT, Value(..), Structure(..), BoltCfg, Record, queryP, run, connect, close)
 import Path (Path, Abs, File, toFilePath)
 
 import MediaGoggler.Config (ServerState(..))
 import MediaGoggler.Datatypes
-import MediaGoggler.Generics (fromRecord, serialize)
+import MediaGoggler.Generics (fromRecord, serialize, RecordSerializable)
 
 type MonadDB a = forall m . MonadIO m => ReaderT ServerState m a
 
-cleanRecord :: Text -> Record -> Map Text Value
-cleanRecord k rec = insert "id" (getId _fields) (getProps _fields)
-    where _fields = getFields (rec ! k)
-          getFields (S Structure{ fields }) = fields
-          getFields _ = error "Fuck off"
-          getId (id:_) = id
-          getId _ = error "FFS"
-          getProps (_:_:(M m):_) = m
-          getProps _ = error "still shitty code"
+convertRecord :: RecordSerializable a => Text -> Record -> Either Text a
+convertRecord label rec = do
+    Node{ nodeIdentity, nodeProps } <- rec `at` label >>= exact
+    fromRecord $ insert "id" (I nodeIdentity) nodeProps
 
 paramsToCypher :: Record -> Text
 paramsToCypher params = intercalate " " $ process <$> keys params
@@ -59,20 +54,15 @@ addFileToDb file path = queryDB cypher (paramsFromPath path) *> pure ()
 
 saveLibrary :: Library -> MonadDB ()
 saveLibrary Library{ libraryType, name } = queryDB cypher params *> pure ()
-    where cypher = "CREATE (l:Library:" <> (getLibraryType $ serialize libraryType)
+    where cypher = "CREATE (l:Library:" <> (pack $ show libraryType)
                 <> ") Set l.name = {name} " <> (paramsToCypher params)
           params = fromList [("name", T name), ("libraryType", serialize libraryType)]
-          getLibraryType (T lib) = lib
-          getLibraryType _ = error "shouldnt happen"
 
 getLibraries :: Int -> MonadDB [Library]
 getLibraries limit = do
-    records <- fmap (cleanRecord "l") <$> queryDB cypher empty
-    pure $ fromRecordPure <$> records
+    records <- queryDB cypher empty
+    pure $ rights $ fmap (convertRecord "l") records --TODO: Better handling of errors
     where cypher = "MATCH (l:Library) RETURN l LIMIT " <> (pack $ show limit)
-          fromRecordPure rec = case (fromRecord rec) of
-              Left e -> error (unpack e)
-              Right a -> a
 
 constructState :: BoltCfg -> IO ServerState
 constructState cfg = ServerState <$> createPool (connect cfg) close 4 500 1
