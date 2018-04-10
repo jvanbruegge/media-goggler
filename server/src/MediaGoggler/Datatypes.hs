@@ -7,12 +7,12 @@ import GHC.Generics (Generic)
 import Path (Path, Rel, File)
 import Database.Bolt (Value(..))
 
-import MediaGoggler.Generics (Serializable(..), RecordSerializable)
+import MediaGoggler.Generics (Serializable(..), RecordSerializable(..))
 
 newtype Id = Id Int
     deriving stock (Generic)
     deriving anyclass (FromJSON, ToJSON)
-    deriving newtype(FromHttpApiData, Serializable)
+    deriving newtype (FromHttpApiData, Serializable)
 
 data FileType = Video deriving (Generic, FromJSON, ToJSON)
 data LibraryType = MovieType | SeriesType deriving (Generic, Show, FromJSON, ToJSON)
@@ -25,8 +25,7 @@ instance Serializable LibraryType where
     deserialize _ = Left "Not a LibraryType value"
 
 data Library = Library
-    { id :: Id
-    , name :: Text
+    { name :: Text
     , libraryType :: LibraryType
     } deriving (Generic, FromJSON, ToJSON, RecordSerializable)
 

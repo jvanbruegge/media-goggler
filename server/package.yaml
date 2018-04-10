@@ -21,6 +21,7 @@ dependencies:
   - path-io
   - aeson
   - text
+  - unordered-containers
   - warp
   - wai
   - tagsoup

@@ -7,7 +7,8 @@ module MediaGoggler.Database (
     getLibraries
     ) where
 
-import Protolude hiding (intercalate, empty)
+import Protolude hiding (intercalate, empty, head)
+import Prelude (head)
 
 import Database.Bolt hiding (Path, pack, unpack)
 import Data.Either (rights)
@@ -18,6 +19,7 @@ import Path (Path, Abs, File, toFilePath)
 
 import MediaGoggler.Config (ServerState(..))
 import MediaGoggler.Datatypes
+import MediaGoggler.DBEntry (DBEntry(..))
 import MediaGoggler.Generics (fromRecord, serialize, RecordSerializable)
 
 type MonadDB a = forall m . MonadIO m => ReaderT ServerState m a
@@ -52,16 +54,18 @@ addFileToDb file path = queryDB cypher (paramsFromPath path) *> pure ()
           label = case file of
               Video -> "Video"
 
-saveLibrary :: Library -> MonadDB ()
-saveLibrary Library{ libraryType, name } = queryDB cypher params *> pure ()
-    where cypher = "CREATE (l:Library:" <> (pack $ show libraryType)
-                <> ") Set l.name = {name} " <> (paramsToCypher params)
+saveLibrary :: Library -> MonadDB (DBEntry Library)
+saveLibrary Library{ libraryType, name } = do
+    records <- queryDB cypher params
+    pure $ head $ rights $ fmap (convertRecord "l") records --TODO: Better error handling
+    where cypher = "CREATE (l:Library:" <> (pack $ show libraryType) <> ") "
+                <> (paramsToCypher params) <> " RETURN l"
           params = fromList [("name", T name), ("libraryType", serialize libraryType)]
 
-getLibraries :: Int -> MonadDB [Library]
+getLibraries :: Int -> MonadDB [DBEntry Library]
 getLibraries limit = do
     records <- queryDB cypher empty
-    pure $ rights $ fmap (convertRecord "l") records --TODO: Better handling of errors
+    pure $ rights $ fmap (convertRecord "l") records --TODO: Better errors handling
     where cypher = "MATCH (l:Library) RETURN l LIMIT " <> (pack $ show limit)
 
 constructState :: BoltCfg -> IO ServerState
