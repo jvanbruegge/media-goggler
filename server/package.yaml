@@ -20,6 +20,7 @@ dependencies:
   - path
   - path-io
   - aeson
+  - string-conversions
   - text
   - unordered-containers
   - uuid

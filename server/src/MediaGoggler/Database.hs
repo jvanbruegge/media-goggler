@@ -7,23 +7,21 @@ module MediaGoggler.Database (
     getLibraries
     ) where
 
-import Protolude hiding (intercalate, empty, head)
-import Prelude (head)
+import Protolude hiding (intercalate, empty)
 
-import Database.Bolt hiding (Path, pack, unpack)
-import Data.Either (rights)
+import Database.Bolt (at, exact, Value(..), BoltCfg(..), Record, Node(..), connect, close)
 import Data.Text (pack, intercalate)
 import Data.Map (Map, fromList, keys, empty, insert)
 import Data.Pool (createPool)
 import Path (Path, Abs, File, toFilePath)
 
 import MediaGoggler.Datatypes
-import MediaGoggler.Monads (MonadBolt(..), MonadID(..), AppConfig(..))
+import MediaGoggler.Monads (MonadBolt(..), MonadID(..), AppConfig(..), MonadDBError(..))
 import MediaGoggler.DBEntry (DBEntry(..))
 import MediaGoggler.Generics (RecordSerializable(..), Serializable(..))
 import MediaGoggler.Label (HasLabel(..))
 
-type MonadDB m = (MonadBolt m, MonadID m)
+type MonadDB m = (MonadBolt m, MonadID m, MonadDBError m)
 type DBSerializeable a = (RecordSerializable a, HasLabel a)
 
 convertRecord :: RecordSerializable a => Text -> Record -> Either Text a
@@ -36,11 +34,14 @@ paramsToCypher label params = intercalate " " $ process <$> keys params
     where process key = "SET " <> label <> "." <> key <> " = {" <> key <> "}"
 
 createNode :: forall m a . (DBSerializeable a, MonadDB m) => a -> m (DBEntry a)
-createNode r = paramM >>= queryDB cypher >>= pure . head . rights . fmap (convertRecord "n") --TODO: Error handling
+createNode r = paramM >>= queryDB cypher >>= exceptHead . mapM (convertRecord "n")
     where cypher = "CREATE (n" <> getLabel r <> ") SET n.id = {id}"
                 <> (paramsToCypher "n" params) <> " RETURN n"
           paramM = getNewID >>= pure . flip (insert "id") params . serialize
           params = toRecord r
+          exceptHead (Right (x:_)) = pure x
+          exceptHead (Left e) = throwDBError e
+          exceptHead _ = throwDBError "Error while getting value from DB"
 
 --getNode :: RecordSerializable a => Id -> MonadDB (DBEntry a)
 --getNode (Id i) = queryDB cypher

@@ -11,9 +11,7 @@ import Database.Bolt (BoltCfg(..))
 import MediaGoggler.API (MediaGogglerAPI)
 import MediaGoggler.Server (server)
 import MediaGoggler.Monads (AppConfig(..), AppT)
-import MediaGoggler.Database (constructState, addFileToDb)
-import MediaGoggler.Filesystem (getNewFiles)
-import MediaGoggler.Datatypes (FileType(..))
+import MediaGoggler.Database (constructState)
 
 readerToHandler :: forall a. AppConfig -> AppT Handler a -> Handler a
 readerToHandler = flip runReaderT
@@ -25,7 +23,4 @@ getApp s = serve api $ hoistServer api (readerToHandler s) server
 main :: IO ()
 main = do
     serverState <- constructState $ def { user = "neo4j", password = "password" }
-    newPaths <- runReaderT getNewFiles serverState
-    putStrLn $ "found " ++ (show . length) newPaths ++ " new videos"
-    runReaderT (mapM_ (addFileToDb Video) newPaths) serverState
     run 3000 $ getApp serverState
