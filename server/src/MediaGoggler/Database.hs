@@ -4,10 +4,11 @@ module MediaGoggler.Database (
     addFileToDb,
     constructState,
     saveLibrary,
-    getLibraries
+    getLibraries,
+    getLibrary
     ) where
 
-import Protolude hiding (intercalate, empty)
+import Protolude hiding (intercalate, empty, toList)
 
 import Database.Bolt (at, exact, Value(..), BoltCfg(..), Record, Node(..), connect, close)
 import Data.Text (pack, intercalate)
@@ -33,18 +34,32 @@ paramsToCypher :: Text -> Record -> Text
 paramsToCypher label params = intercalate " " $ process <$> keys params
     where process key = "SET " <> label <> "." <> key <> " = {" <> key <> "}"
 
+toSingle :: (RecordSerializable a, MonadDB m) => Text -> [Record] -> m a
+toSingle label = exceptHead . mapM (convertRecord label)
+    where exceptHead (Right (x:_)) = pure x
+          exceptHead (Left e) = throwDBError e
+          exceptHead _ = throwDBError "Error while getting value from DB"
+
+toList :: (RecordSerializable a, MonadDB m) => Text -> [Record] -> m [a]
+toList label = except . mapM (convertRecord label)
+    where except (Right x) = pure x
+          except (Left e) = throwDBError e
+
 createNode :: forall m a . (DBSerializeable a, MonadDB m) => a -> m (DBEntry a)
-createNode r = paramM >>= queryDB cypher >>= exceptHead . mapM (convertRecord "n")
+createNode r = paramM >>= queryDB cypher >>= toSingle "n"
     where cypher = "CREATE (n" <> getLabel r <> ") SET n.id = {id}"
                 <> (paramsToCypher "n" params) <> " RETURN n"
           paramM = getNewID >>= pure . flip (insert "id") params . serialize
           params = toRecord r
-          exceptHead (Right (x:_)) = pure x
-          exceptHead (Left e) = throwDBError e
-          exceptHead _ = throwDBError "Error while getting value from DB"
 
---getNode :: RecordSerializable a => Id -> MonadDB (DBEntry a)
---getNode (Id i) = queryDB cypher
+getNode :: (DBSerializeable a, MonadDB m) => Text -> Id -> m (DBEntry a)
+getNode label (Id i) = queryDB cypher params >>= toSingle "n"
+    where cypher = "MATCH (n" <> label <> ") WHERE n.id = {id} RETURN n"
+          params = fromList [("id", serialize i)]
+
+getNodes :: (DBSerializeable a, MonadDB m) => Text -> Int -> m [DBEntry a]
+getNodes label limit = queryDB cypher empty >>= toList "n"
+    where cypher = "MATCH (n" <> label <> ") RETURN n LIMIT " <> (pack $ show limit)
 
 paramsFromPath :: Path Abs File -> Map Text Value
 paramsFromPath path = fromList [("path", (T . pack . toFilePath) path)]
@@ -62,11 +77,11 @@ addFileToDb file path = queryDB cypher (paramsFromPath path) *> pure ()
 saveLibrary :: MonadDB m => Library -> m (DBEntry Library)
 saveLibrary = createNode
 
+getLibrary :: MonadDB m => Id -> m (DBEntry Library)
+getLibrary = getNode ":Library"
+
 getLibraries :: MonadDB m => Int -> m [DBEntry Library]
-getLibraries limit = do
-    records <- queryDB cypher empty
-    pure $ rights $ fmap (convertRecord "l") records --TODO: Better errors handling
-    where cypher = "MATCH (l:Library) RETURN l LIMIT " <> (pack $ show limit)
+getLibraries = getNodes ":Library"
 
 constructState :: BoltCfg -> IO AppConfig
 constructState cfg = AppConfig <$> createPool (connect cfg) close 4 500 1

@@ -23,10 +23,9 @@ getLibrary id = getSingleLibrary id :<|> (getMovie id :<|> getMovies id :<|> pos
     where getMovie = undefined
           getMovies = undefined
           postMovie = undefined
-          getSingleLibrary = undefined
 
 getSingleLibrary :: Id -> Server (SimpleGet Library)
-getSingleLibrary = undefined
+getSingleLibrary = DB.getLibrary
 
 getLibraries :: Server (GetAll Library)
 getLibraries limit = DB.getLibraries $ fromMaybe 100 limit
