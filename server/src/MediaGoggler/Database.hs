@@ -20,7 +20,8 @@ import Path (Path, Abs, File, toFilePath)
 import MediaGoggler.Config (ServerState(..))
 import MediaGoggler.Datatypes
 import MediaGoggler.DBEntry (DBEntry(..))
-import MediaGoggler.Generics (fromRecord, serialize, RecordSerializable)
+import MediaGoggler.Generics (RecordSerializable(..))
+import MediaGoggler.Label (HasLabel(..))
 
 type MonadDB a = forall m . MonadIO m => ReaderT ServerState m a
 
@@ -32,6 +33,12 @@ convertRecord label rec = do
 paramsToCypher :: Record -> Text
 paramsToCypher params = intercalate " " $ process <$> keys params
     where process key = "SET l." <> key <> " = {" <> key <> "}"
+
+createNode :: (RecordSerializable a, HasLabel a) => a -> MonadDB (DBEntry a)
+createNode r = queryDB cypher params >>= pure . head . rights . fmap (convertRecord "n") --TODO: Error handling
+    where cypher = "CREATE (n" <> getLabel r <> ") "
+                   <> (paramsToCypher params) <> " RETURN n"
+          params = toRecord r
 
 queryDB :: Text -> Map Text Value -> MonadDB [Record]
 queryDB c p = runQuery $ queryP c p
@@ -55,12 +62,7 @@ addFileToDb file path = queryDB cypher (paramsFromPath path) *> pure ()
               Video -> "Video"
 
 saveLibrary :: Library -> MonadDB (DBEntry Library)
-saveLibrary Library{ libraryType, name } = do
-    records <- queryDB cypher params
-    pure $ head $ rights $ fmap (convertRecord "l") records --TODO: Better error handling
-    where cypher = "CREATE (l:Library:" <> (pack $ show libraryType) <> ") "
-                <> (paramsToCypher params) <> " RETURN l"
-          params = fromList [("name", T name), ("libraryType", serialize libraryType)]
+saveLibrary = createNode
 
 getLibraries :: Int -> MonadDB [DBEntry Library]
 getLibraries limit = do
