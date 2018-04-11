@@ -12,6 +12,7 @@ import Prelude (undefined)
 import GHC.Generics
 import Data.Text (pack)
 import Data.Map (Map, lookup, empty, union, singleton)
+import Data.UUID (UUID, toText, fromText)
 import Database.Bolt (Record, Value(..))
 
 -- Black Magic from https://stackoverflow.com/questions/44494286/how-to-write-a-generic-function-that-can-serialise-deserialize-any-record-from-a
@@ -29,6 +30,11 @@ instance Serializable Int where
     serialize = I
     deserialize (I i) = Right i
     deserialize _ = Left "Not an integer value"
+
+instance Serializable UUID where
+    serialize = T . toText
+    deserialize (T x) = maybeToEither "Not a UUID value" (fromText x)
+    deserialize _ = Left "Not a UUID value"
 
 class RecordSerializable a where
     fromRecord :: Record -> Either Text a

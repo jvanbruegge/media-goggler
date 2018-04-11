@@ -3,8 +3,10 @@ module MediaGoggler.API where
 import Protolude
 import Servant
 
-import MediaGoggler.Datatypes (Library, Person, Id)
+import MediaGoggler.Datatypes (Library, Person, Id, Movie, VideoFile)
 import MediaGoggler.DBEntry (DBEntry)
+
+type SimpleGet res = Get '[JSON] (DBEntry res)
 
 type GetAll res = QueryParam "count" Int :> Get '[JSON] [DBEntry res]
 type PostSingle res = ReqBody '[JSON] res :> Post '[JSON] (DBEntry res)
@@ -17,6 +19,11 @@ type MediaGogglerAPI = "libraries" :> (LibraryAPI :<|> Endpoint Library)
     :<|> "persons" :> SimpleEndpoint Person
 
 type LibraryAPI = Capture "id" Id :> (
-        Get '[JSON] (DBEntry Library)
-        -- :<|> "movies" :> SimpleEndpoint Movie
+        SimpleGet Library
+        :<|> "movies" :> (MovieAPI :<|> Endpoint Movie)
+    )
+
+type MovieAPI = Capture "id" Id :> (
+        Get '[JSON] (DBEntry Movie)
+        :<|> "files" :> SimpleEndpoint VideoFile
     )

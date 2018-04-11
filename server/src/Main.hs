@@ -10,15 +10,15 @@ import Database.Bolt (BoltCfg(..))
 
 import MediaGoggler.API (MediaGogglerAPI)
 import MediaGoggler.Server (server)
-import MediaGoggler.Config (ServerState(..))
+import MediaGoggler.Monads (AppConfig(..), AppT)
 import MediaGoggler.Database (constructState, addFileToDb)
 import MediaGoggler.Filesystem (getNewFiles)
 import MediaGoggler.Datatypes (FileType(..))
 
-readerToHandler :: forall a. ServerState -> ReaderT ServerState Handler a -> Handler a
+readerToHandler :: forall a. AppConfig -> AppT Handler a -> Handler a
 readerToHandler = flip runReaderT
 
-getApp :: ServerState -> Application
+getApp :: AppConfig -> Application
 getApp s = serve api $ hoistServer api (readerToHandler s) server
     where api = Proxy @MediaGogglerAPI
 

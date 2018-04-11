@@ -3,13 +3,14 @@ module MediaGoggler.Datatypes where
 import Protolude
 import Servant (FromHttpApiData)
 import Data.Aeson (ToJSON, FromJSON)
+import Data.UUID (UUID)
 import GHC.Generics (Generic)
 import Path (Path, Rel, File)
 import Database.Bolt (Value(..))
 
 import MediaGoggler.Generics (Serializable(..), RecordSerializable(..))
 
-newtype Id = Id Int
+newtype Id = Id UUID
     deriving stock (Generic)
     deriving anyclass (FromJSON, ToJSON)
     deriving newtype (FromHttpApiData, Serializable)
@@ -27,10 +28,11 @@ instance Serializable LibraryType where
 data Library = Library
     { name :: Text
     , libraryType :: LibraryType
-    } deriving (Generic, FromJSON, ToJSON, RecordSerializable)
+    } deriving (Generic, FromJSON, ToJSON, RecordSerializable, Show)
 
-data Metadata = Metadata
-    { summary :: Text
+data Movie = Movie
+    { title :: Text
+    , summary :: Text
     } deriving (Generic, FromJSON, ToJSON)
 
 data Person = Person
