@@ -5,7 +5,10 @@ module MediaGoggler.Database (
     constructState,
     saveLibrary,
     getLibraries,
-    getLibrary
+    getLibrary,
+    saveMovie,
+    getMovie,
+    getMovies
     ) where
 
 import Protolude hiding (intercalate, empty, toList)
@@ -45,21 +48,37 @@ toList label = except . mapM (convertRecord label)
     where except (Right x) = pure x
           except (Left e) = throwDBError e
 
-createNode :: forall m a . (DBSerializeable a, MonadDB m) => a -> m (DBEntry a)
+getLimit :: Maybe Int -> Text
+getLimit Nothing = ""
+getLimit (Just n) = "LIMIT " <> (pack $ show n)
+
+createNode :: (DBSerializeable a, MonadDB m) => a -> m (DBEntry a)
 createNode r = paramM >>= queryDB cypher >>= toSingle "n"
     where cypher = "CREATE (n" <> getLabel r <> ") SET n.id = {id}"
                 <> (paramsToCypher "n" params) <> " RETURN n"
           paramM = getNewID >>= pure . flip (insert "id") params . serialize
           params = toRecord r
 
+createRelation :: MonadDB m => Id -> Id -> Text -> Text -> m ()
+createRelation parent child parentLabel childLabel = queryDB cypher params *> pure ()
+    where cypher = "MATCH (n" <> parentLabel <> " {id: {parent}}), "
+                <> "(m" <> childLabel <>" {id: {child}}) CREATE (n)-[:CONTAINS]->(m)"
+          params = fromList [("parent", serialize parent), ("child", serialize child)]
+
 getNode :: (DBSerializeable a, MonadDB m) => Text -> Id -> m (DBEntry a)
 getNode label (Id i) = queryDB cypher params >>= toSingle "n"
     where cypher = "MATCH (n" <> label <> ") WHERE n.id = {id} RETURN n"
           params = fromList [("id", serialize i)]
 
-getNodes :: (DBSerializeable a, MonadDB m) => Text -> Int -> m [DBEntry a]
+getNodes :: (DBSerializeable a, MonadDB m) => Text -> Maybe Int -> m [DBEntry a]
 getNodes label limit = queryDB cypher empty >>= toList "n"
-    where cypher = "MATCH (n" <> label <> ") RETURN n LIMIT " <> (pack $ show limit)
+    where cypher = "MATCH (n" <> label <> ") RETURN n " <> getLimit limit
+
+getNodesInRelation :: (DBSerializeable a, MonadDB m) => Text -> Text -> Id -> Maybe Int -> m [DBEntry a]
+getNodesInRelation parentLabel label parent limit = queryDB cypher params >>= toList "m"
+    where cypher = "MATCH (n" <> parentLabel <> " {id: {id}})-[:CONTAINS]->(m"
+                <> label <> ") RETURN m " <> getLimit limit
+          params = fromList [("id", serialize parent)]
 
 paramsFromPath :: Path Abs File -> Map Text Value
 paramsFromPath path = fromList [("path", (T . pack . toFilePath) path)]
@@ -80,8 +99,20 @@ saveLibrary = createNode
 getLibrary :: MonadDB m => Id -> m (DBEntry Library)
 getLibrary = getNode ":Library"
 
-getLibraries :: MonadDB m => Int -> m [DBEntry Library]
+getLibraries :: MonadDB m => Maybe Int -> m [DBEntry Library]
 getLibraries = getNodes ":Library"
+
+saveMovie :: MonadDB m => Id -> Movie -> m (DBEntry Movie)
+saveMovie id m = do
+    movie@(DBEntry i _) <- createNode m
+    createRelation id i ":Library:MovieType" ":Movie"
+    pure movie
+
+getMovie :: MonadDB m => Id -> m (DBEntry Movie)
+getMovie = getNode ":Movie"
+
+getMovies :: MonadDB m => Id -> Maybe Int -> m [DBEntry Movie]
+getMovies = getNodesInRelation ":Library" ":Movie"
 
 constructState :: BoltCfg -> IO AppConfig
 constructState cfg = AppConfig <$> createPool (connect cfg) close 4 500 1

@@ -11,24 +11,35 @@ import MediaGoggler.Monads (AppT)
 type Server api = ServerT api (AppT Handler)
 
 server :: Server MediaGogglerAPI
-server = (getLibrary :<|> getLibraries :<|> postLibrary)
+server = (libraryServer :<|> getLibraries :<|> postLibrary)
     :<|> (getPerson :<|> getPersons :<|> postPerson)
     where
         getPerson = undefined
         getPersons = undefined
         postPerson = undefined
 
-getLibrary :: Server LibraryAPI
-getLibrary id = getSingleLibrary id :<|> (getMovie id :<|> getMovies id :<|> postMovie id)
+libraryServer :: Server LibraryAPI
+libraryServer id = getLibrary id :<|> (getMovie :<|> getMovies id :<|> postMovie id)
     where getMovie = undefined
-          getMovies = undefined
-          postMovie = undefined
 
-getSingleLibrary :: Id -> Server (SimpleGet Library)
-getSingleLibrary = DB.getLibrary
+getLibrary :: Id -> Server (SimpleGet Library)
+getLibrary = DB.getLibrary
 
 getLibraries :: Server (GetAll Library)
-getLibraries limit = DB.getLibraries $ fromMaybe 100 limit
+getLibraries = DB.getLibraries
 
 postLibrary :: Server (PostSingle Library)
 postLibrary = DB.saveLibrary
+
+movieServer :: Server MovieAPI
+movieServer id = getMovie id :<|> fileHandler
+    where fileHandler = undefined
+
+postMovie :: Id -> Server (PostSingle Movie)
+postMovie = DB.saveMovie
+
+getMovies :: Id -> Server (GetAll Movie)
+getMovies = DB.getMovies
+
+getMovie :: Id -> Server (SimpleGet Movie)
+getMovie = DB.getMovie

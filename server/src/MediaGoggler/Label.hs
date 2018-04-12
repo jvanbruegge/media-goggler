@@ -10,3 +10,6 @@ class HasLabel a where
 
 instance HasLabel Library where
     getLabel Library{ libraryType } = ":Library:" <> (pack $ show libraryType)
+
+instance HasLabel Movie where
+    getLabel Movie{} = ":Movie"

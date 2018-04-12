@@ -28,12 +28,12 @@ instance Serializable LibraryType where
 data Library = Library
     { name :: Text
     , libraryType :: LibraryType
-    } deriving (Generic, FromJSON, ToJSON, RecordSerializable, Show)
+    } deriving (Generic, FromJSON, ToJSON, RecordSerializable)
 
 data Movie = Movie
     { title :: Text
     , summary :: Text
-    } deriving (Generic, FromJSON, ToJSON)
+    } deriving (Generic, FromJSON, ToJSON, RecordSerializable)
 
 data Person = Person
     { name :: Text,
