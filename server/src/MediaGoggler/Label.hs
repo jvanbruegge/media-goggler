@@ -13,3 +13,6 @@ instance HasLabel Library where
 
 instance HasLabel Movie where
     getLabel Movie{} = ":Movie"
+
+instance HasLabel VideoFile where
+    getLabel VideoFile{} = ":File:Video"

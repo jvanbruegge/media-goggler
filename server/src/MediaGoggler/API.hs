@@ -17,10 +17,11 @@ type SimpleEndpoint res = GetSingle res :<|> Endpoint res
 
 type MediaGogglerAPI = "libraries" :> (LibraryAPI :<|> Endpoint Library)
     :<|> "persons" :> SimpleEndpoint Person
+    :<|> "movies" :> MovieAPI
 
 type LibraryAPI = Capture "id" Id :> (
         SimpleGet Library
-        :<|> "movies" :> (MovieAPI :<|> Endpoint Movie)
+        :<|> "movies" :> Endpoint Movie
     )
 
 type MovieAPI = Capture "id" Id :> (

@@ -1,14 +1,15 @@
 module MediaGoggler.Database (
     MonadDB,
-    fileExistsInDb,
-    addFileToDb,
     constructState,
     saveLibrary,
     getLibraries,
     getLibrary,
     saveMovie,
     getMovie,
-    getMovies
+    getMovies,
+    saveVideoFile,
+    getVideoFile,
+    getVideoFiles
     ) where
 
 import Protolude hiding (intercalate, empty, toList)
@@ -59,10 +60,10 @@ createNode r = paramM >>= queryDB cypher >>= toSingle "n"
           paramM = getNewID >>= pure . flip (insert "id") params . serialize
           params = toRecord r
 
-createRelation :: MonadDB m => Id -> Id -> Text -> Text -> m ()
-createRelation parent child parentLabel childLabel = queryDB cypher params *> pure ()
+createRelation :: MonadDB m => Text -> Id -> Id -> Text -> Text -> m ()
+createRelation rel parent child parentLabel childLabel = queryDB cypher params *> pure ()
     where cypher = "MATCH (n" <> parentLabel <> " {id: {parent}}), "
-                <> "(m" <> childLabel <>" {id: {child}}) CREATE (n)-[:CONTAINS]->(m)"
+                <> "(m" <> childLabel <>" {id: {child}}) CREATE (n)-[" <> rel <> "]->(m)"
           params = fromList [("parent", serialize parent), ("child", serialize child)]
 
 getNode :: (DBSerializeable a, MonadDB m) => Text -> Id -> m (DBEntry a)
@@ -74,24 +75,20 @@ getNodes :: (DBSerializeable a, MonadDB m) => Text -> Maybe Int -> m [DBEntry a]
 getNodes label limit = queryDB cypher empty >>= toList "n"
     where cypher = "MATCH (n" <> label <> ") RETURN n " <> getLimit limit
 
-getNodesInRelation :: (DBSerializeable a, MonadDB m) => Text -> Text -> Id -> Maybe Int -> m [DBEntry a]
-getNodesInRelation parentLabel label parent limit = queryDB cypher params >>= toList "m"
-    where cypher = "MATCH (n" <> parentLabel <> " {id: {id}})-[:CONTAINS]->(m"
+getNodesInRelation :: (DBSerializeable a, MonadDB m) => Text -> Text -> Text -> Id -> Maybe Int -> m [DBEntry a]
+getNodesInRelation rel parentLabel label parent limit = queryDB cypher params >>= toList "m"
+    where cypher = "MATCH (n" <> parentLabel <> " {id: {id}})-[" <> rel <> "]->(m"
                 <> label <> ") RETURN m " <> getLimit limit
           params = fromList [("id", serialize parent)]
 
 paramsFromPath :: Path Abs File -> Map Text Value
 paramsFromPath path = fromList [("path", (T . pack . toFilePath) path)]
 
-fileExistsInDb :: MonadDB m => Path Abs File -> m Bool
-fileExistsInDb path = not . null <$> queryDB cypher (paramsFromPath path)
-    where cypher = "MATCH (f:File) WHERE f.path = {path} RETURN *"
-
-addFileToDb :: MonadDB m => FileType -> Path Abs File -> m ()
-addFileToDb file path = queryDB cypher (paramsFromPath path) *> pure ()
-    where cypher = "CREATE (f:File:" <> label <> ") SET f.path = {path}"
-          label = case file of
-              Video -> "Video"
+saveNode :: (DBSerializeable a, MonadDB m) => Text -> Text -> Text -> Id -> a -> m (DBEntry a)
+saveNode rel parentLabel childLabel id n = do
+    node@(DBEntry i _) <- createNode n
+    createRelation rel id i parentLabel childLabel
+    pure node
 
 saveLibrary :: MonadDB m => Library -> m (DBEntry Library)
 saveLibrary = createNode
@@ -103,16 +100,22 @@ getLibraries :: MonadDB m => Maybe Int -> m [DBEntry Library]
 getLibraries = getNodes ":Library"
 
 saveMovie :: MonadDB m => Id -> Movie -> m (DBEntry Movie)
-saveMovie id m = do
-    movie@(DBEntry i _) <- createNode m
-    createRelation id i ":Library:MovieType" ":Movie"
-    pure movie
+saveMovie = saveNode ":CONTAINS" ":Library:MovieType" ":Movie"
 
 getMovie :: MonadDB m => Id -> m (DBEntry Movie)
 getMovie = getNode ":Movie"
 
 getMovies :: MonadDB m => Id -> Maybe Int -> m [DBEntry Movie]
-getMovies = getNodesInRelation ":Library" ":Movie"
+getMovies = getNodesInRelation ":CONTAINS" ":Library" ":Movie"
+
+saveVideoFile :: MonadDB m => Id -> VideoFile -> m (DBEntry VideoFile)
+saveVideoFile = saveNode ":FILE" ":Movie" ":File:Video"
+
+getVideoFile :: MonadDB m => Id -> m (DBEntry VideoFile)
+getVideoFile = getNode ":File:Video"
+
+getVideoFiles :: MonadDB m => Id -> Maybe Int -> m [DBEntry VideoFile]
+getVideoFiles = getNodesInRelation ":FILE" ":Movie" ":File:Video"
 
 constructState :: BoltCfg -> IO AppConfig
 constructState cfg = AppConfig <$> createPool (connect cfg) close 4 500 1
