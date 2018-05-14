@@ -4,7 +4,6 @@ import Protolude
 
 import Data.Map (Map)
 import Data.Pool (Pool, withResource)
-import Data.String.Conversions (cs)
 import Data.UUID.V4 (nextRandom)
 import Database.Bolt (Value, Record, Pipe, queryP, run)
 import Servant (ServantErr(..), err500)
@@ -28,9 +27,3 @@ class Monad m => MonadID m where
 
 instance MonadIO m => MonadID (AppT m) where
     getNewID = Id <$> liftIO nextRandom
-
-class Monad m => MonadDBError m where
-    throwDBError :: Text -> m a
-
-instance MonadError ServantErr m => MonadDBError (AppT m) where
-    throwDBError e = throwError $ err500 { errBody = cs e }

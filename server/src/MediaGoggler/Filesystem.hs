@@ -2,7 +2,6 @@
 
 module MediaGoggler.Filesystem where
 
-import Protolude
 import Path (Path, Abs, Dir, File, absdir)
 import Path.IO (walkDirAccum)
 

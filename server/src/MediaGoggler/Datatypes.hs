@@ -2,11 +2,10 @@ module MediaGoggler.Datatypes where
 
 import Protolude
 import Servant (FromHttpApiData)
-import Data.Text (pack, unpack)
 import Data.Aeson (ToJSON, FromJSON)
 import Data.UUID (UUID)
 import GHC.Generics (Generic)
-import Path (Path, Rel, File, toFilePath, parseRelFile)
+import Path (Path, Rel, File, Dir)
 import Database.Bolt (Value(..))
 
 import MediaGoggler.Generics (Serializable(..), RecordSerializable(..))
@@ -25,18 +24,9 @@ instance Serializable LibraryType where
     deserialize (T "SeriesType") = Right SeriesType
     deserialize _ = Left "Not a LibraryType value"
 
-instance Serializable (Path Rel File) where
-    serialize = T . pack . toFilePath
-    deserialize (T p) = maybeToEither "Error while parsing path" (parseRelFile $ unpack p)
-    deserialize _ = Left "Not a Path value"
-
-instance (Serializable a, Serializable b) => Serializable (a, b) where
-    serialize (a, b) = L [serialize a, serialize b]
-    deserialize (L [a, b]) = (,) <$> deserialize a <*> deserialize b
-    deserialize _ = Left "Not a Tuple type"
-
 data Library = Library
     { name :: Text
+    , rootDir :: Path Rel Dir
     , libraryType :: LibraryType
     } deriving (Generic, FromJSON, ToJSON, RecordSerializable)
 

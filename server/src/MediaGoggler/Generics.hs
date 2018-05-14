@@ -10,12 +10,11 @@ import Protolude hiding (empty, map, undefined)
 import Prelude (undefined)
 
 import GHC.Generics
-import Data.Text (pack)
+import Path (Path, Rel, File, Dir, toFilePath, parseRelFile, parseRelDir)
+import Data.Text (pack, unpack)
 import Data.Map (Map, lookup, empty, union, singleton)
 import Data.UUID (UUID, toText, fromText)
 import Database.Bolt (Record, Value(..))
-
--- Black Magic from https://stackoverflow.com/questions/44494286/how-to-write-a-generic-function-that-can-serialise-deserialize-any-record-from-a
 
 class Serializable a where
     serialize :: a -> Value
@@ -36,6 +35,21 @@ instance Serializable UUID where
     deserialize (T x) = maybeToEither "Not a UUID value" (fromText x)
     deserialize _ = Left "Not a UUID value"
 
+instance Serializable (Path Rel File) where
+    serialize = T . pack . toFilePath
+    deserialize (T p) = maybeToEither "Error while parsing path" (parseRelFile $ unpack p)
+    deserialize _ = Left "Not a Path value"
+
+instance Serializable (Path Rel Dir) where
+    serialize = T . pack . toFilePath
+    deserialize (T p) = maybeToEither "Error while parsing path" (parseRelDir $ unpack p)
+    deserialize _ = Left "Not a Path value"
+
+instance (Serializable a, Serializable b) => Serializable (a, b) where
+    serialize (a, b) = L [serialize a, serialize b]
+    deserialize (L [a, b]) = (,) <$> deserialize a <*> deserialize b
+    deserialize _ = Left "Not a Tuple type"
+
 class RecordSerializable a where
     fromRecord :: Record -> Either Text a
     toRecord :: a -> Record
@@ -46,6 +60,7 @@ class RecordSerializable a where
     default toRecord :: (Generic a, GRecordSerializable () (Rep a)) => a -> Record
     toRecord x = gToRecord () (from x)
 
+-- Black Magic from https://stackoverflow.com/questions/44494286/how-to-write-a-generic-function-that-can-serialise-deserialize-any-record-from-a
 class GRecordSerializable k f where
     gFromRecord :: k -> Record -> Either Text (f a)
     gToRecord :: k -> f a -> Record

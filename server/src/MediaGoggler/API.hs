@@ -18,6 +18,7 @@ type SimpleEndpoint res = GetSingle res :<|> Endpoint res
 type MediaGogglerAPI = "libraries" :> (LibraryAPI :<|> Endpoint Library)
     :<|> "persons" :> SimpleEndpoint Person
     :<|> "movies" :> MovieAPI
+    :<|> "files" :> FileAPI
 
 type LibraryAPI = Capture "id" Id :> (
         SimpleGet Library
@@ -26,5 +27,7 @@ type LibraryAPI = Capture "id" Id :> (
 
 type MovieAPI = Capture "id" Id :> (
         Get '[JSON] (DBEntry Movie)
-        :<|> "files" :> SimpleEndpoint VideoFile
+        :<|> "files" :> Endpoint VideoFile
     )
+
+type FileAPI = GetSingle VideoFile

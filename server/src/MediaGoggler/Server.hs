@@ -2,6 +2,7 @@ module MediaGoggler.Server where
 
 import Protolude
 import Servant hiding (Server)
+import Data.String.Conversions (cs)
 
 import MediaGoggler.API
 import MediaGoggler.Datatypes
@@ -10,47 +11,60 @@ import MediaGoggler.Monads (AppT)
 
 type Server api = ServerT api (AppT Handler)
 
+(...) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+(...) = (.) . (.)
+
 server :: Server MediaGogglerAPI
 server = (libraryServer :<|> getLibraries :<|> postLibrary)
-    :<|> (getPerson :<|> getPersons :<|> postPerson)
+    :<|> personServer
     :<|> movieServer
+    :<|> getFile
     where
-        getPerson = undefined
-        getPersons = undefined
-        postPerson = undefined
+        personServer = undefined
 
 libraryServer :: Server LibraryAPI
 libraryServer id = getLibrary id :<|> (getMovies id :<|> postMovie id)
 
 getLibrary :: Id -> Server (SimpleGet Library)
-getLibrary = DB.getLibrary
+getLibrary = except404 . DB.getLibrary
 
 getLibraries :: Server (GetAll Library)
-getLibraries = DB.getLibraries
+getLibraries = except404 . DB.getLibraries
 
 postLibrary :: Server (PostSingle Library)
-postLibrary = DB.saveLibrary
+postLibrary = except500 . DB.saveLibrary
 
 movieServer :: Server MovieAPI
 movieServer id = getMovie id :<|> videoFileServer id
 
 postMovie :: Id -> Server (PostSingle Movie)
-postMovie = DB.saveMovie
+postMovie = except500 ... DB.saveMovie
 
 getMovies :: Id -> Server (GetAll Movie)
-getMovies = DB.getMovies
+getMovies = except404 ... DB.getMovies
 
-getMovie :: Id -> Server (SimpleGet Movie)
-getMovie = DB.getMovie
+getMovie :: Server (GetSingle Movie)
+getMovie = except404 . DB.getMovie
 
-videoFileServer :: Id -> Server (SimpleEndpoint VideoFile)
-videoFileServer id = (getFile :<|> getFiles id :<|> postFile id)
+videoFileServer :: Id -> Server (Endpoint VideoFile)
+videoFileServer id = (getFiles id :<|> postFile id)
 
 getFile :: Server (GetSingle VideoFile)
-getFile = DB.getVideoFile
+getFile = except404 . DB.getVideoFile
 
 getFiles :: Id -> Server (GetAll VideoFile)
-getFiles = DB.getVideoFiles
+getFiles = except404 ... DB.getVideoFiles
 
 postFile :: Id -> Server (PostSingle VideoFile)
-postFile = DB.saveVideoFile
+postFile = except500 ... DB.saveVideoFile
+
+except500 :: (DB.MonadDB m, MonadError ServantErr m) => m (Either Text a) -> m a
+except500 = eitherToExcept err500
+
+except404 :: (DB.MonadDB m, MonadError ServantErr m) => m (Either Text a) -> m a
+except404 = eitherToExcept err404
+
+eitherToExcept :: ServantErr -> (DB.MonadDB m, MonadError ServantErr m) => m (Either Text a) -> m a
+eitherToExcept err = (>>= \case
+    Right x -> pure x
+    Left e -> throwError $ err { errBody = cs e })
