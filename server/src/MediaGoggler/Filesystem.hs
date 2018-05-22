@@ -2,13 +2,16 @@
 
 module MediaGoggler.Filesystem where
 
-import Path (Path, Abs, Dir, File, absdir)
+import Path (Path, Abs, Rel, Dir, File, absdir, (</>))
 import Path.IO (walkDirAccum)
 
 --import MediaGoggler.Database (MonadDB, fileExistsInDb)
 
 root :: Path Abs Dir
 root = [absdir|/media|]
+
+prefixPath :: Path Rel a -> Path Abs a
+prefixPath = (</>) root
 
 --getNewFiles :: (MonadDB m, MonadIO m) => m [Path Abs File]
 --getNewFiles = walkDirAccum Nothing writer root

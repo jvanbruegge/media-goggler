@@ -2,14 +2,13 @@ module MediaGoggler.Server where
 
 import Protolude
 import Servant hiding (Server)
-import Data.String.Conversions (cs)
 
 import MediaGoggler.API
 import MediaGoggler.Datatypes
+import MediaGoggler.Raw (serveFile)
+import MediaGoggler.Monads (Server)
+import MediaGoggler.Error (except404, except500)
 import qualified MediaGoggler.Database as DB
-import MediaGoggler.Monads (AppT)
-
-type Server api = ServerT api (AppT Handler)
 
 (...) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
 (...) = (.) . (.)
@@ -18,7 +17,7 @@ server :: Server MediaGogglerAPI
 server = (libraryServer :<|> getLibraries :<|> postLibrary)
     :<|> personServer
     :<|> movieServer
-    :<|> getFile
+    :<|> fileServer
     where
         personServer = undefined
 
@@ -49,6 +48,9 @@ getMovie = except404 . DB.getMovie
 videoFileServer :: Id -> Server (Endpoint VideoFile)
 videoFileServer id = (getFiles id :<|> postFile id)
 
+fileServer :: Server FileAPI
+fileServer id = (getFile id :<|> serveFile id)
+
 getFile :: Server (GetSingle VideoFile)
 getFile = except404 . DB.getVideoFile
 
@@ -57,14 +59,3 @@ getFiles = except404 ... DB.getVideoFiles
 
 postFile :: Id -> Server (PostSingle VideoFile)
 postFile = except500 ... DB.saveVideoFile
-
-except500 :: (DB.MonadDB m, MonadError ServantErr m) => m (Either Text a) -> m a
-except500 = eitherToExcept err500
-
-except404 :: (DB.MonadDB m, MonadError ServantErr m) => m (Either Text a) -> m a
-except404 = eitherToExcept err404
-
-eitherToExcept :: ServantErr -> (DB.MonadDB m, MonadError ServantErr m) => m (Either Text a) -> m a
-eitherToExcept err = (>>= \case
-    Right x -> pure x
-    Left e -> throwError $ err { errBody = cs e })
