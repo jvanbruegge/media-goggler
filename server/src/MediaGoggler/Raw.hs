@@ -9,7 +9,7 @@ import Path (toFilePath)
 import Conduit (ConduitT, runConduitRes, (.|), sourceFile, mapM_C, takeC)
 import Control.Monad.Trans.Resource (ResourceT)
 
-import MediaGoggler.API (FileStream, NoFraming, OggVideo)
+import MediaGoggler.API (FileStream, OggVideo)
 import MediaGoggler.Datatypes (Id, VideoFile(..))
 import MediaGoggler.DBEntry (DBEntry(..))
 import MediaGoggler.Monads (Server)

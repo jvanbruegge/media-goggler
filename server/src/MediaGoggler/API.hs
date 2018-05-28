@@ -3,7 +3,6 @@ module MediaGoggler.API where
 import Protolude hiding (empty)
 import Servant
 import Conduit (ConduitT, ResourceT)
-import Data.ByteString.Lazy (empty)
 import qualified Data.ByteString.Lazy as BL
 import qualified Network.HTTP.Media as M
 
@@ -40,13 +39,6 @@ type FileAPI = Capture "id" Id :> (
         Get '[JSON] (DBEntry VideoFile)
         :<|> "raw" :> StreamGet NoFraming OggVideo FileStream
     )
-
-data NoFraming
-
-instance FramingRender NoFraming a where
-    header   _ _ = empty
-    boundary _ _ = BoundaryStrategyGeneral identity
-    trailer  _ _ = empty
 
 data OggVideo deriving Typeable
 
