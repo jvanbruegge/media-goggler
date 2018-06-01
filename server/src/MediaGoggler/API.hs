@@ -34,10 +34,20 @@ type MovieAPI = Capture "id" Id :> (
     )
 
 type FileStream = ConduitT () ByteString (ResourceT IO) ()
+type VideoStream n = Stream 'GET n NoFraming OggVideo (
+        Headers '[
+                Header "Accept-Ranges" Text,
+                Header "Content-Length" Int64,
+                Header "Content-Range" Text
+            ] FileStream
+    )
 
 type FileAPI = Capture "id" Id :> (
         Get '[JSON] (DBEntry VideoFile)
-        :<|> "raw" :> StreamGet NoFraming OggVideo FileStream
+        :<|> "raw" :> (
+                Header "Range" Text :> VideoStream 206
+                :<|> VideoStream 200
+            )
     )
 
 data OggVideo deriving Typeable

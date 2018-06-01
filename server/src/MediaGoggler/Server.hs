@@ -5,7 +5,7 @@ import Servant hiding (Server)
 
 import MediaGoggler.API
 import MediaGoggler.Datatypes
-import MediaGoggler.Raw (serveFile)
+import MediaGoggler.Raw (serveFile, serveRange)
 import MediaGoggler.Monads (Server)
 import MediaGoggler.Error (except404, except500)
 import qualified MediaGoggler.Database as DB
@@ -49,7 +49,7 @@ videoFileServer :: Id -> Server (Endpoint VideoFile)
 videoFileServer id = (getFiles id :<|> postFile id)
 
 fileServer :: Server FileAPI
-fileServer id = (getFile id :<|> serveFile id)
+fileServer id = (getFile id :<|> serveRange id :<|> serveFile id)
 
 getFile :: Server (GetSingle VideoFile)
 getFile = except404 . DB.getVideoFile

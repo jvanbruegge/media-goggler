@@ -27,6 +27,7 @@ dependencies:
   - text
   - unordered-containers
   - uuid
+  - unix-compat
   - warp
   - wai
   - tagsoup
