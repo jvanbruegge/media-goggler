@@ -28,7 +28,7 @@ export function App(sources: Sources): Sinks {
             <video
                 autoplay
                 controls
-                src="http://localhost:3000/api/files/3413857a-0bd0-4335-8757-863261c69dc6/raw"
+                src="/api/files/3413857a-0bd0-4335-8757-863261c69dc6/raw"
                 height="720"
             />
         </div>
