@@ -15,6 +15,8 @@ services:
         image: neo4j:3.3
         networks:
             - goggler
+        volumes:
+            - /home/jan/neo4j/data:/data
 
 networks:
     goggler:

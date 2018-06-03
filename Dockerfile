@@ -31,7 +31,10 @@ RUN npm install
 COPY client/ ./
 RUN npm run build
 
-FROM alpine
+FROM debian
+RUN apt-get update
+RUN apt-get install libgmp10 netbase
+
 WORKDIR /root/
 COPY --from=0 /root/.local/bin/media-goggler /root/media-goggler
 COPY --from=1 /root/media-goggler/build/ /root/public/

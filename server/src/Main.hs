@@ -30,5 +30,5 @@ servePublic = Tagged $ staticApp $ (defaultWebAppSettings "/root/public") { ssIn
 
 main :: IO ()
 main = do
-    serverState <- constructState $ def { user = "neo4j", password = "password" }
+    serverState <- constructState $ def { host="neo4j", user = "neo4j", password = "password" }
     run 3000 $ getApp serverState

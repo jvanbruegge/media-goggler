@@ -39,7 +39,7 @@ packages:
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
 extra-deps:
-    - git: git@github.com:jvanbruegge/servant.git
+    - git: https://github.com/jvanbruegge/servant.git
       commit: dbbe9b73217022696b5066c0374c04a3ca670b04
       subdirs:
           - servant
