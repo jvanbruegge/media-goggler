@@ -16,8 +16,10 @@ services:
         networks:
             - goggler
 # If you want a persistant database
-#        volumes:
-#            - $SOME_FOLDER/neo4j/data:/data
+        volumes:
+            - /home/jan/neo4j/data:/data
+        ports:
+            - "7687:7687"
 
 networks:
     goggler:

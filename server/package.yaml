@@ -10,32 +10,30 @@ category: Web
 ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
 
 dependencies:
+  - aeson
   - base
   - bytestring
-  - containers
   - conduit
+  - containers
   - data-default
-  - protolude
-  - servant-server
+  - filepath
   - hasbolt
-  - resource-pool
-  - path
   - http-media
+  - lucid
+  - path
   - path-io
-  - aeson
+  - protolude
+  - resource-pool
+  - resourcet
+  - servant-lucid
+  - servant-server
   - string-conversions
   - text
+  - unix-compat
   - unordered-containers
   - uuid
-  - unix-compat
-  - warp
   - wai
-  - tagsoup
-  - tagged
-  - wai-app-static
-  - filepath
-  - resourcet
-  - unliftio-core
+  - warp
 
 executable:
   main: Main.hs
