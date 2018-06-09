@@ -13,6 +13,7 @@ dependencies:
   - aeson
   - base
   - bytestring
+  - clay
   - conduit
   - containers
   - data-default
@@ -25,6 +26,7 @@ dependencies:
   - protolude
   - resource-pool
   - resourcet
+  - servant-clay
   - servant-lucid
   - servant-server
   - string-conversions

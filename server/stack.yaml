@@ -39,11 +39,13 @@ packages:
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
 extra-deps:
-    - git: https://github.com/jvanbruegge/servant.git
-      commit: dbbe9b73217022696b5066c0374c04a3ca670b04
+    - git: https://github.com/haskell-servant/servant.git
+      commit: 352596398edff472f87eb400a953f54cd6ede000
       subdirs:
           - servant
           - servant-server
+    - git: https://github.com/jvanbruegge/servant-clay.git
+      commit: a08d1e8cdb6108ac93cededcdd52b3382416ce1c
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
