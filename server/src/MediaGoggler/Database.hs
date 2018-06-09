@@ -12,18 +12,18 @@ module MediaGoggler.Database (
     getVideoFiles
     ) where
 
-import Protolude hiding (intercalate, empty, toList)
 
-import Database.Bolt (at, exact, BoltCfg(..), Record, Node(..), connect, close)
-import Data.Text (pack, intercalate)
 import Data.Map (fromList, keys, empty, insert)
 import Data.Pool (createPool)
+import Data.Text (pack, unwords)
+import Database.Bolt (at, exact, BoltCfg(..), Record, Node(..), connect, close)
+import Protolude hiding (empty, toList)
 
-import MediaGoggler.Datatypes
-import MediaGoggler.Monads (MonadBolt(..), MonadID(..), AppConfig(..))
 import MediaGoggler.DBEntry (DBEntry(..))
+import MediaGoggler.Datatypes
 import MediaGoggler.Generics (RecordSerializable(..), Serializable(..))
 import MediaGoggler.Label (HasLabel(..))
+import MediaGoggler.Monads (MonadBolt(..), MonadID(..), AppConfig(..))
 
 type MonadDB m = (MonadBolt m, MonadID m)
 type DBSerializeable a = (RecordSerializable a, HasLabel a)
@@ -34,7 +34,7 @@ convertRecord label rec = do
     fromRecord nodeProps
 
 paramsToCypher :: Text -> Record -> Text
-paramsToCypher label params = intercalate " " $ process <$> keys params
+paramsToCypher label params = unwords $ process <$> keys params
     where process key = "SET " <> label <> "." <> key <> " = {" <> key <> "}"
 
 toSingle :: (RecordSerializable a, MonadDB m) => Text -> [Record] -> m (Either Text a)
@@ -48,13 +48,13 @@ toList label = pure . mapM (convertRecord label)
 
 getLimit :: Maybe Int -> Text
 getLimit Nothing = ""
-getLimit (Just n) = "LIMIT " <> (pack $ show n)
+getLimit (Just n) = "LIMIT " <> pack (show n)
 
 createNode :: (DBSerializeable a, MonadDB m) => a -> m (Either Text (DBEntry a))
 createNode r = paramM >>= queryDB cypher >>= toSingle "n"
     where cypher = "CREATE (n" <> getLabel r <> ") SET n.id = {id}"
-                <> (paramsToCypher "n" params) <> " RETURN n"
-          paramM = getNewID >>= pure . flip (insert "id") params . serialize
+                <> paramsToCypher "n" params <> " RETURN n"
+          paramM = flip (insert "id") params . serialize <$> getNewID
           params = toRecord r
 
 createRelation :: MonadDB m => Text -> Id -> Id -> Text -> Text -> m ()
@@ -73,7 +73,7 @@ getNode :: (DBSerializeable a, MonadDB m) =>
 getNode label id = queryNode label id >>= toSingle "n"
 
 existsNode :: MonadDB m => Text -> Id -> m Bool
-existsNode label id = queryNode label id >>= pure . not . null
+existsNode label id = not . null <$> queryNode label id
 
 getNodes :: (DBSerializeable a, MonadDB m) => Text -> Maybe Int -> m (Either Text [DBEntry a])
 getNodes label limit = queryDB cypher empty >>= toList "n"

@@ -6,15 +6,14 @@ module MediaGoggler.Generics (
     serialize,
     deserialize) where
 
-import Protolude hiding (empty, map, undefined)
-import Prelude (undefined)
-
-import GHC.Generics
-import Path (Path, Rel, File, Dir, toFilePath, parseRelFile, parseRelDir)
-import Data.Text (pack, unpack)
 import Data.Map (Map, lookup, empty, union, singleton)
+import Data.Text (pack, unpack)
 import Data.UUID (UUID, toText, fromText)
 import Database.Bolt (Record, Value(..))
+import GHC.Generics
+import Path (Path, Rel, File, Dir, toFilePath, parseRelFile, parseRelDir)
+import Prelude (undefined)
+import Protolude hiding (empty, map, undefined)
 
 class Serializable a where
     serialize :: a -> Value
@@ -70,7 +69,7 @@ instance Serializable a => GRecordSerializable Text (K1 i a) where
     gToRecord key (K1 x) = singleton key (serialize x)
 
 lookupE :: (Ord k, Show k) => k -> Map k v -> Either Text v
-lookupE k = maybe (Left $ "Key not found: " <> (pack $ show k)) (Right) . lookup k
+lookupE k = maybe (Left $ "Key not found: " <> pack (show k)) Right . lookup k
 
 instance (Selector c, GRecordSerializable Text f) => GRecordSerializable k (M1 S c f) where
     gFromRecord _ map = fixProxy $ \proxy -> M1 <$> gFromRecord (pack $ selName proxy) map

@@ -1,16 +1,17 @@
 module MediaGoggler.DBEntry where
 
-import Protolude hiding (Show, show)
-import Prelude (error, Show(..))
 import Data.Aeson
 import Data.Map ((!?))
 import Data.UUID (fromText, toText)
-import qualified Data.Map as M
-import qualified Data.HashMap.Strict as HM
 import Database.Bolt (exact, Value(T))
+import Prelude (error, Show(..))
+import Protolude hiding (Show, show)
 
-import MediaGoggler.Generics (RecordSerializable(..))
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Map as M
+
 import MediaGoggler.Datatypes (Id(..))
+import MediaGoggler.Generics (RecordSerializable(..))
 
 data DBEntry a = DBEntry Id a deriving (Generic)
 

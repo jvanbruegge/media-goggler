@@ -1,8 +1,8 @@
 module MediaGoggler.Error where
 
+import Data.String.Conversions (cs)
 import Protolude
 import Servant hiding (Server)
-import Data.String.Conversions (cs)
 
 import qualified MediaGoggler.Database as DB
 

@@ -5,9 +5,10 @@ import Servant hiding (Server)
 
 import MediaGoggler.API
 import MediaGoggler.Datatypes
-import MediaGoggler.Raw (serveFile, serveRange)
-import MediaGoggler.Monads (Server)
 import MediaGoggler.Error (except404, except500)
+import MediaGoggler.Monads (Server)
+import MediaGoggler.Raw (serveFile, serveRange)
+
 import qualified MediaGoggler.Database as DB
 
 (...) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
@@ -46,10 +47,10 @@ getMovie :: Server (GetSingle Movie)
 getMovie = except404 . DB.getMovie
 
 videoFileServer :: Id -> Server (Endpoint VideoFile)
-videoFileServer id = (getFiles id :<|> postFile id)
+videoFileServer id = getFiles id :<|> postFile id
 
 fileServer :: Server FileAPI
-fileServer id = (getFile id :<|> serveRange id :<|> serveFile id)
+fileServer id = getFile id :<|> serveRange id :<|> serveFile id
 
 getFile :: Server (GetSingle VideoFile)
 getFile = except404 . DB.getVideoFile

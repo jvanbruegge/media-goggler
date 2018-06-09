@@ -1,12 +1,12 @@
 module MediaGoggler.Datatypes where
 
-import Protolude
-import Servant (FromHttpApiData)
 import Data.Aeson (ToJSON, FromJSON)
 import Data.UUID (UUID)
+import Database.Bolt (Value(..))
 import GHC.Generics (Generic)
 import Path (Path, Rel, File, Dir)
-import Database.Bolt (Value(..))
+import Protolude
+import Servant (FromHttpApiData)
 
 import MediaGoggler.Generics (Serializable(..), RecordSerializable(..))
 

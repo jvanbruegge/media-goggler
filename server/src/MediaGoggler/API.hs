@@ -1,13 +1,14 @@
 module MediaGoggler.API where
 
-import Protolude hiding (empty)
-import Servant
 import Conduit (ConduitT, ResourceT)
+import Protolude
+import Servant
+
 import qualified Data.ByteString.Lazy as BL
 import qualified Network.HTTP.Media as M
 
-import MediaGoggler.Datatypes (Library, Person, Id, Movie, VideoFile)
 import MediaGoggler.DBEntry (DBEntry)
+import MediaGoggler.Datatypes (Library, Person, Id, Movie, VideoFile)
 
 type SimpleGet res = Get '[JSON] (DBEntry res)
 

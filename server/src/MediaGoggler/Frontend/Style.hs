@@ -1,9 +1,9 @@
 module MediaGoggler.Frontend.Style (StyleAPI, serveStyle) where
 
-import Protolude
 import Clay
-import Servant.CSS.Clay
+import Protolude
 import Servant (Get, (:>))
+import Servant.CSS.Clay
 
 import MediaGoggler.Monads (Server)
 

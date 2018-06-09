@@ -1,12 +1,12 @@
 module MediaGoggler.Frontend.Index (FrontendAPI, serveFrontend) where
 
-import Protolude
 import Lucid
+import Protolude
 import Servant hiding (Server)
 import Servant.HTML.Lucid
 
-import MediaGoggler.Monads (Server)
 import MediaGoggler.Frontend.Style (StyleAPI, serveStyle)
+import MediaGoggler.Monads (Server)
 
 type FrontendAPI = Get '[HTML] (Html ()) :<|> StyleAPI
 
