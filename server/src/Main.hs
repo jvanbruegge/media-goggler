@@ -10,7 +10,7 @@ import Network.Wai.Handler.Warp (run)
 
 import MediaGoggler.API (MediaGogglerAPI)
 import MediaGoggler.Database (constructState)
-import MediaGoggler.Monads (AppConfig(..), AppT, Server)
+import MediaGoggler.Monads (AppConfig(..), AppT)
 import MediaGoggler.Server (server)
 
 import MediaGoggler.Frontend.Index (FrontendAPI, serveFrontend)

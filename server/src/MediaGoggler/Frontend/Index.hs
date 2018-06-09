@@ -1,4 +1,4 @@
-module MediaGoggler.Frontend.Index where
+module MediaGoggler.Frontend.Index (FrontendAPI, serveFrontend) where
 
 import Protolude
 import Lucid
@@ -8,17 +8,23 @@ import Servant.HTML.Lucid
 import MediaGoggler.Monads (Server)
 import MediaGoggler.Frontend.Style (StyleAPI, serveStyle)
 
-type FrontendAPI = Get '[HTML] (Html ())
-        :<|> "styles.css" :> StyleAPI
+type FrontendAPI = Get '[HTML] (Html ()) :<|> StyleAPI
 
 serveFrontend :: Server FrontendAPI
 serveFrontend = pure html :<|> serveStyle
+
+api :: Proxy FrontendAPI
+api = Proxy
+
+styleApi :: Proxy StyleAPI
+styleApi = Proxy
 
 html :: Html ()
 html = doctypehtml_ $ do
     head_ $ do
         title_ "MediaGoggler"
-        link_ [rel_ "stylesheet", href_ "/styles.css"] --TODO: Use SafeLink
+        link_ [rel_ "stylesheet"
+              , href_ $ toUrlPiece $ safeLink api styleApi]
 
     body_ $ do
         h1_ "Media Goggler"
